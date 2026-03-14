@@ -1,13 +1,15 @@
 import pika
 
-credentials = pika.PlainCredentials('liftgenius', 'L0c@lY0k3l1509!')
-parameters = pika.ConnectionParameters('0.0.0.0', credentials=credentials, heartbeat=300)
 
-def get_plain_credentials(username, password):
+
+# credentials = pika.PlainCredentials(username, password)
+# parameters = pika.ConnectionParameters(host, credentials=credentials, heartbeat=300)
+
+def get_plain_credentials(username='guest', password='guest'):
     return pika.PlainCredentials(str(username), str(password))
 
-def get_parameters(credentials, host='0.0.0.0', heartbeat=120):
-    return pika.ConnectionParameters(host, credentials=credentials, heartbeat=300)
+def get_parameters(credentials: pika.PlainCredentials, host='0.0.0.0', heartbeat=120):
+    return pika.ConnectionParameters(host, credentials=credentials, heartbeat=heartbeat)
 
 def ack_message(ch, delivery_tag):
     """Note that `ch` must be the same pika channel instance via which
@@ -21,7 +23,7 @@ def ack_message(ch, delivery_tag):
         # log and/or do something that makes sense for your app in this case.
         pass
 
-def send_message(exchange_name, queue_name, routing_key_name, message, quiet=True):
+def send_message(parameters: pika.ConnectionParameters, exchange_name: str, queue_name: str, routing_key_name: str, message: str, quiet=True):
     connection = pika.BlockingConnection(parameters)
     channel = connection.channel()
     channel.exchange_declare(
@@ -46,7 +48,7 @@ def send_message(exchange_name, queue_name, routing_key_name, message, quiet=Tru
         print(f" ✈️ Sent {message} to {exchange_name}")
     connection.close()
 
-def setup_channel(parameters, exchange_name, queue_name, routing_key_name):
+def setup_channel(parameters: pika.ConnectionParameters, exchange_name: str, queue_name: str, routing_key_name: str):
     connection = pika.BlockingConnection(parameters)
     channel = connection.channel()
     channel.exchange_declare(
@@ -63,7 +65,7 @@ def setup_channel(parameters, exchange_name, queue_name, routing_key_name):
         )
     return connection, channel
 
-def connect_to_channel(parameters, exchange_name, queue_name, routing_key_name):
+def connect_to_channel(parameters: pika.ConnectionParameters, exchange_name: str, queue_name: str, routing_key_name: str):
     connection = pika.BlockingConnection(parameters)
     channel = connection.channel()
     channel.queue_bind(

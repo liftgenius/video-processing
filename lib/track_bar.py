@@ -88,15 +88,13 @@ def delete_file(filepath):
     except OSError as e:
         print("Error: %s - %s" % (e.filename, e.strerror))
 
-def analyze(job_id, presigned_url, mode="bar_speed"):
+def analyze(status_exchange_name, status_exchange_queue, job_id, presigned_url, mode="bar_speed"):
 
     ID = str(uuid.uuid4())
-    # output_path = os.environ.get('WRITE_PATH') + ID + VIDEO_EXTENSION
-    output_path = "/home/john/Videos/liftgenius/" + ID + VIDEO_EXTENSION
+    output_path = os.environ.get('VIDEO_WRITE_PATH') + ID + VIDEO_EXTENSION
+    output_bucket = os.environ.get('VIDEO_UPLOAD_BUCKET_NAME')
+    # output_path = VIDEO_WRITE_PATH + ID + VIDEO_EXTENSION
 
-    # output_bucket_name = os.environ.get('PROD_OUTPUT_BUCKET')
-    output_bucket_name = "video-output"
-    output_name = ID + VIDEO_EXTENSION
     video = cv2.VideoCapture(presigned_url)
     if not video.isOpened():
         print("could not open video")
@@ -221,9 +219,9 @@ def analyze(job_id, presigned_url, mode="bar_speed"):
         if int(progress) % 5 == 4:
             message = json.dumps({"job_id": job_id, "progress": f"{progress:.0f}"})
             rabbitmq_utils.send_message(
-                exchange_name="processing_jobs_exchange",
-                queue_name="processing_jobs_queue",
-                routing_key_name="processing_jobs_queue", 
+                exchange_name=status_exchange_name,
+                queue_name=status_exchange_queue,
+                routing_key_name=status_exchange_queue, 
                  message=message
             )
         
@@ -234,9 +232,9 @@ def analyze(job_id, presigned_url, mode="bar_speed"):
             #convert to web compatible format with ffmpeg
             message = json.dumps({"job_id": job_id, "status": "processing"})
             rabbitmq_utils.send_message(
-                exchange_name="processing_jobs_exchange",
-                queue_name="processing_jobs_queue",
-                routing_key_name="processing_jobs_queue", 
+                exchange_name=status_exchange_name,
+                queue_name=status_exchange_queue,
+                routing_key_name=status_exchange_queue, 
                 message=message
             )
             converted_video_path = f"/home/john/Videos/liftgenius/{ID}.webm"
@@ -251,15 +249,15 @@ def analyze(job_id, presigned_url, mode="bar_speed"):
                     if int(ffmpeg_progress) % 5 == 4:
                         message = json.dumps({"job_id": job_id, "progress": f"{ffmpeg_progress:.0f}"})
                         rabbitmq_utils.send_message(
-                            exchange_name="processing_jobs_exchange",
-                            queue_name="processing_jobs_queue",
-                            routing_key_name="processing_jobs_queue", 
+                            exchange_name=status_exchange_name,
+                            queue_name=status_exchange_queue,
+                            routing_key_name=status_exchange_queue, 
                             message=message
                         )
 
             with open(converted_video_path, "rb") as f:
-                response = boto3_utils.upload_object(output_bucket_name, converted_video_name, f)
-                output_url = boto3_utils.create_presigned_url(output_bucket_name, converted_video_name)
+                response = boto3_utils.upload_object(output_bucket, converted_video_name, f)
+                output_url = boto3_utils.create_presigned_url(output_bucket, converted_video_name)
                 # print(response)
                 # exit()
             if output_url:
