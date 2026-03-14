@@ -5,7 +5,9 @@ charset-normalizer==2.0.12
 idna==3.3
 jmespath==0.10.0
 numpy==1.22.2
-opencv-contrib-python-headless==4.5.5.62
+# opencv-contrib-python-headless==4.5.5.62
+opencv-contrib-python-headless===4.9.0.80
+pika==1.3.2
 python-dateutil==2.8.2
 python-dotenv==0.19.2
 requests==2.27.1
